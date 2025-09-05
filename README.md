@@ -25,7 +25,7 @@ Easily test and learn regular expressions with our interactive Regex Tester. Whe
 
 ![Regex Tester Preview](.github\assets\preview.png)
 
-Try out the Regex Tester by visiting our live project at [Regex Tester](https://regex.pyyupsk.vercel.app/).
+Try out the Regex Tester by visiting our live project at [Regex Tester](https://regex.fasu.dev/).
 
 ## Tech Stack
 
@@ -40,13 +40,13 @@ Clone this repository and get started with the Regex Tester:
 
 ```bash
 # Clone the repository
-git clone https://github.com/pyyupsk/regex-tester.git
+git clone https://github.com/pyyupsk/regex.git
 
 # Install dependencies
-npm install
+bun install
 
 # Run the development server
-npm run dev
+bun run dev
 ```
 
 Visit `http://localhost:3000` in your browser to start testing regex patterns locally.
