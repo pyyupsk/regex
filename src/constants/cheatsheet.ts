@@ -1,6 +1,6 @@
-type Cheatsheet = Record<string, { pattern: string; description: string }[]>;
+type CheatSheet = Record<string, { pattern: string; description: string }[]>;
 
-export const cheatsheet: Cheatsheet = {
+export const cheatSheet: CheatSheet = {
   "Basic Characters": [
     { pattern: ".", description: "Any character except newline" },
     { pattern: "\\w", description: "Word character [A-Za-z0-9_]" },

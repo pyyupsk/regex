@@ -1,12 +1,19 @@
 "use client";
 
+import { Copy, Plus } from "lucide-react";
 import {
-  useQueryState,
-  useQueryStates,
   parseAsBoolean,
   parseAsString,
+  useQueryState,
+  useQueryStates,
 } from "nuqs";
 import { useCallback, useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Table,
   TableBody,
@@ -15,22 +22,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Copy, Plus } from "lucide-react";
-import { cheatsheet } from "@/constants/cheatsheet";
-import { Label } from "@/components/ui/label";
+import { cheatSheet } from "@/constants/cheatsheet";
 import { cn } from "@/lib/utils";
 
 export function RegexTester() {
@@ -53,8 +53,7 @@ export function RegexTester() {
       try {
         new RegExp(pattern);
         setIsValidPattern(true);
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      } catch (error) {
+      } catch {
         setIsValidPattern(false);
       }
     } else {
@@ -63,12 +62,59 @@ export function RegexTester() {
   }, [pattern]);
 
   const highlightMatches = useCallback(
-    (text: string): string => {
+    (text: string): React.ReactNode => {
       if (!pattern || !isValidPattern) return text;
       try {
         const flagString = `${flags.global ? "g" : ""}${flags.caseInsensitive ? "i" : ""}${flags.multiline ? "m" : ""}`;
-        const re = new RegExp(`(${pattern})`, flagString);
-        return text.replace(re, "<mark>$1</mark>");
+        const re = new RegExp(pattern, flagString);
+
+        const parts: React.ReactNode[] = [];
+        let lastIndex = 0;
+        let match: RegExpExecArray | null = null;
+
+        if (flags.global) {
+          match = re.exec(text);
+          while (match !== null) {
+            if (match.index > lastIndex) {
+              parts.push(text.slice(lastIndex, match.index));
+            }
+            parts.push(
+              <mark
+                key={`match-${match.index}`}
+                className="bg-yellow-200 dark:bg-yellow-600"
+              >
+                {match[0]}
+              </mark>,
+            );
+            lastIndex = re.lastIndex;
+            match = re.exec(text);
+          }
+          if (lastIndex < text.length) {
+            parts.push(text.slice(lastIndex));
+          }
+        } else {
+          match = re.exec(text);
+          if (match) {
+            if (match.index > 0) {
+              parts.push(text.slice(0, match.index));
+            }
+            parts.push(
+              <mark
+                key={`match-${match.index}`}
+                className="bg-yellow-200 dark:bg-yellow-600"
+              >
+                {match[0]}
+              </mark>,
+            );
+            if (match.index + match[0].length < text.length) {
+              parts.push(text.slice(match.index + match[0].length));
+            }
+          } else {
+            return text;
+          }
+        }
+
+        return parts.length > 0 ? parts : text;
       } catch {
         return text;
       }
@@ -115,7 +161,7 @@ export function RegexTester() {
                         size="icon"
                         onClick={() => copyToClipboard(pattern)}
                       >
-                        <Copy className="h-4 w-4" />
+                        <Copy />
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
@@ -165,12 +211,9 @@ export function RegexTester() {
             <div className="flex flex-col space-y-2">
               <Label htmlFor="result">Result:</Label>
               <ScrollArea className="h-48 rounded border p-2">
-                <p
-                  className="whitespace-pre-wrap"
-                  dangerouslySetInnerHTML={{
-                    __html: highlightMatches(testString),
-                  }}
-                />
+                <p className="whitespace-pre-wrap">
+                  {highlightMatches(testString)}
+                </p>
               </ScrollArea>
             </div>
           </div>
@@ -184,7 +227,7 @@ export function RegexTester() {
         <CardContent>
           <Tabs defaultValue="Basic Characters">
             <TabsList className="mb-4 hidden md:grid md:grid-cols-3 lg:grid-cols-5">
-              {Object.keys(cheatsheet).map((category) => (
+              {Object.keys(cheatSheet).map((category) => (
                 <TabsTrigger
                   key={category}
                   value={category}
@@ -195,13 +238,13 @@ export function RegexTester() {
               ))}
             </TabsList>
             <div className="mb-4 flex flex-wrap gap-2 md:hidden">
-              {Object.keys(cheatsheet).map((category) => (
+              {Object.keys(cheatSheet).map((category) => (
                 <Button key={category} variant="outline">
                   {category}
                 </Button>
               ))}
             </div>
-            {Object.entries(cheatsheet).map(([category, items]) => (
+            {Object.entries(cheatSheet).map(([category, items]) => (
               <TabsContent key={category} value={category}>
                 <Table>
                   <TableHeader>
@@ -212,8 +255,8 @@ export function RegexTester() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {items.map((item, index) => (
-                      <TableRow key={index}>
+                    {items.map((item) => (
+                      <TableRow key={item.pattern}>
                         <TableCell>
                           <code className="rounded bg-muted px-2 py-1 text-foreground">
                             {item.pattern}
@@ -232,7 +275,7 @@ export function RegexTester() {
                                       setPattern(pattern + item.pattern)
                                     }
                                   >
-                                    <Plus className="h-4 w-4" />
+                                    <Plus />
                                   </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>
@@ -250,7 +293,7 @@ export function RegexTester() {
                                       copyToClipboard(item.pattern)
                                     }
                                   >
-                                    <Copy className="h-4 w-4" />
+                                    <Copy />
                                   </Button>
                                 </TooltipTrigger>
                                 <TooltipContent>

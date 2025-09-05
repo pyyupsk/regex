@@ -22,12 +22,12 @@ export function commonMetaData({
       },
     ],
     authors: [{ name: "@pyyupsk" }],
-    metadataBase: new URL("https://regex.pyyupsk.vercel.app"),
+    metadataBase: new URL("https://regex.fasu.dev"),
     openGraph: {
       description,
       title,
-      url: "https://regex.pyyupsk.vercel.app",
-      siteName: "regex.pyyupsk.vercel.app",
+      url: "https://regex.fasu.dev",
+      siteName: "regex.fasu.dev",
       type: "website",
     },
     robots: {
