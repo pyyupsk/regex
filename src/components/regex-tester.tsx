@@ -61,60 +61,86 @@ export function RegexTester() {
     }
   }, [pattern]);
 
+  const createHighlightElement = useCallback(
+    (match: RegExpExecArray): React.ReactElement => (
+      <mark
+        key={`match-${match.index}`}
+        className="bg-yellow-200 dark:bg-yellow-600"
+      >
+        {match[0]}
+      </mark>
+    ),
+    [],
+  );
+
+  const buildFlagString = useCallback((): string => {
+    const flagParts: string[] = [];
+    if (flags.global) flagParts.push("g");
+    if (flags.caseInsensitive) flagParts.push("i");
+    if (flags.multiline) flagParts.push("m");
+    return flagParts.join("");
+  }, [flags.global, flags.caseInsensitive, flags.multiline]);
+
+  const processGlobalMatches = useCallback(
+    (re: RegExp, text: string): React.ReactNode[] => {
+      const parts: React.ReactNode[] = [];
+      let lastIndex = 0;
+      let match = re.exec(text);
+
+      while (match !== null) {
+        if (match.index > lastIndex) {
+          parts.push(text.slice(lastIndex, match.index));
+        }
+        parts.push(createHighlightElement(match));
+        lastIndex = re.lastIndex;
+        match = re.exec(text);
+      }
+
+      if (lastIndex < text.length) {
+        parts.push(text.slice(lastIndex));
+      }
+
+      return parts;
+    },
+    [createHighlightElement],
+  );
+
+  const processSingleMatch = useCallback(
+    (re: RegExp, text: string): React.ReactNode => {
+      const match = re.exec(text);
+      if (!match) return text;
+
+      const parts: React.ReactNode[] = [];
+
+      if (match.index > 0) {
+        parts.push(text.slice(0, match.index));
+      }
+      parts.push(createHighlightElement(match));
+
+      const endIndex = match.index + match[0].length;
+      if (endIndex < text.length) {
+        parts.push(text.slice(endIndex));
+      }
+
+      return parts;
+    },
+    [createHighlightElement],
+  );
+
   const highlightMatches = useCallback(
     (text: string): React.ReactNode => {
       if (!pattern || !isValidPattern) return text;
+
       try {
-        const flagString = `${flags.global ? "g" : ""}${flags.caseInsensitive ? "i" : ""}${flags.multiline ? "m" : ""}`;
+        const flagString = buildFlagString();
         const re = new RegExp(pattern, flagString);
 
-        const parts: React.ReactNode[] = [];
-        let lastIndex = 0;
-        let match: RegExpExecArray | null = null;
-
         if (flags.global) {
-          match = re.exec(text);
-          while (match !== null) {
-            if (match.index > lastIndex) {
-              parts.push(text.slice(lastIndex, match.index));
-            }
-            parts.push(
-              <mark
-                key={`match-${match.index}`}
-                className="bg-yellow-200 dark:bg-yellow-600"
-              >
-                {match[0]}
-              </mark>,
-            );
-            lastIndex = re.lastIndex;
-            match = re.exec(text);
-          }
-          if (lastIndex < text.length) {
-            parts.push(text.slice(lastIndex));
-          }
-        } else {
-          match = re.exec(text);
-          if (match) {
-            if (match.index > 0) {
-              parts.push(text.slice(0, match.index));
-            }
-            parts.push(
-              <mark
-                key={`match-${match.index}`}
-                className="bg-yellow-200 dark:bg-yellow-600"
-              >
-                {match[0]}
-              </mark>,
-            );
-            if (match.index + match[0].length < text.length) {
-              parts.push(text.slice(match.index + match[0].length));
-            }
-          } else {
-            return text;
-          }
+          const parts = processGlobalMatches(re, text);
+          return parts.length > 0 ? parts : text;
         }
 
-        return parts.length > 0 ? parts : text;
+        return processSingleMatch(re, text);
       } catch {
         return text;
       }
@@ -123,8 +149,9 @@ export function RegexTester() {
       pattern,
       isValidPattern,
       flags.global,
-      flags.caseInsensitive,
-      flags.multiline,
+      buildFlagString,
+      processGlobalMatches,
+      processSingleMatch,
     ],
   );
 
